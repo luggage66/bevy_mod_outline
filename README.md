@@ -57,6 +57,7 @@ cargo run --example hollow
 | 0.2.x        | 0.8.x        |
 | 0.3.x        | 0.9.x        |
 | 0.4.x        | 0.10.x       |
+| 0.?.x        | 0.11.x       |
 
 ## Features
 

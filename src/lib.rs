@@ -31,7 +31,7 @@ use bevy::render::render_graph::RenderGraph;
 use bevy::render::render_phase::{sort_phase_system, AddRenderCommand, DrawFunctions};
 use bevy::render::render_resource::{SpecializedMeshPipelines, VertexFormat};
 use bevy::render::view::RenderLayers;
-use bevy::render::{RenderApp, RenderSet};
+use bevy::render::{Render, RenderApp, RenderSet};
 use bevy::transform::TransformSystem;
 use interpolation::Lerp;
 
@@ -207,16 +207,15 @@ impl Plugin for OutlinePlugin {
             Shader::from_wgsl
         );
 
-        app.add_plugin(ExtractComponentPlugin::<OutlineStencil>::extract_visible())
-            .add_plugin(ExtractComponentPlugin::<OutlineRenderLayers>::default())
-            .add_plugin(UniformComponentPlugin::<OutlineStencilUniform>::default())
-            .add_plugin(UniformComponentPlugin::<OutlineVolumeUniform>::default())
-            .add_plugin(UniformComponentPlugin::<OutlineFragmentUniform>::default())
-            .add_plugin(UniformComponentPlugin::<OutlineViewUniform>::default())
-            .add_system(
-                compute_outline_depth
-                    .in_base_set(CoreSet::PostUpdate)
-                    .after(TransformSystem::TransformPropagate),
+        app.add_plugins(ExtractComponentPlugin::<OutlineStencil>::extract_visible())
+            .add_plugins(ExtractComponentPlugin::<OutlineRenderLayers>::default())
+            .add_plugins(UniformComponentPlugin::<OutlineStencilUniform>::default())
+            .add_plugins(UniformComponentPlugin::<OutlineVolumeUniform>::default())
+            .add_plugins(UniformComponentPlugin::<OutlineFragmentUniform>::default())
+            .add_plugins(UniformComponentPlugin::<OutlineViewUniform>::default())
+            .add_systems(
+                PostUpdate,
+                compute_outline_depth.after(TransformSystem::TransformPropagate),
             )
             .sub_app_mut(RenderApp)
             .init_resource::<DrawFunctions<StencilOutline>>()
@@ -227,17 +226,35 @@ impl Plugin for OutlinePlugin {
             .add_render_command::<StencilOutline, DrawStencil>()
             .add_render_command::<OpaqueOutline, DrawOutline>()
             .add_render_command::<TransparentOutline, DrawOutline>()
-            .add_system(extract_outline_view_uniforms.in_schedule(ExtractSchedule))
-            .add_system(extract_outline_stencil_uniforms.in_schedule(ExtractSchedule))
-            .add_system(extract_outline_volume_uniforms.in_schedule(ExtractSchedule))
-            .add_system(sort_phase_system::<StencilOutline>.in_set(RenderSet::PhaseSort))
-            .add_system(sort_phase_system::<OpaqueOutline>.in_set(RenderSet::PhaseSort))
-            .add_system(sort_phase_system::<TransparentOutline>.in_set(RenderSet::PhaseSort))
-            .add_system(queue_outline_view_bind_group.in_set(RenderSet::Queue))
-            .add_system(queue_outline_stencil_bind_group.in_set(RenderSet::Queue))
-            .add_system(queue_outline_volume_bind_group.in_set(RenderSet::Queue))
-            .add_system(queue_outline_stencil_mesh.in_set(RenderSet::Queue))
-            .add_system(queue_outline_volume_mesh.in_set(RenderSet::Queue));
+            .add_systems(ExtractSchedule, extract_outline_view_uniforms)
+            .add_systems(ExtractSchedule, extract_outline_stencil_uniforms)
+            .add_systems(ExtractSchedule, extract_outline_volume_uniforms)
+            .add_systems(
+                Render,
+                sort_phase_system::<StencilOutline>.in_set(RenderSet::PhaseSort),
+            )
+            .add_systems(
+                Render,
+                sort_phase_system::<OpaqueOutline>.in_set(RenderSet::PhaseSort),
+            )
+            .add_systems(
+                Render,
+                sort_phase_system::<TransparentOutline>.in_set(RenderSet::PhaseSort),
+            )
+            .add_systems(
+                Render,
+                queue_outline_view_bind_group.in_set(RenderSet::Queue),
+            )
+            .add_systems(
+                Render,
+                queue_outline_stencil_bind_group.in_set(RenderSet::Queue),
+            )
+            .add_systems(
+                Render,
+                queue_outline_volume_bind_group.in_set(RenderSet::Queue),
+            )
+            .add_systems(Render, queue_outline_stencil_mesh.in_set(RenderSet::Queue))
+            .add_systems(Render, queue_outline_volume_mesh.in_set(RenderSet::Queue));
 
         let world = &mut app.sub_app_mut(RenderApp).world;
         let node = OutlineNode::new(world);
@@ -257,7 +274,7 @@ impl Plugin for OutlinePlugin {
 
         // Run after main 3D pass, but before UI psss
         draw_3d_graph.add_node_edge(
-            bevy::core_pipeline::core_3d::graph::node::MAIN_PASS,
+            bevy::core_pipeline::core_3d::graph::node::MAIN_OPAQUE_PASS,
             OUTLINE_PASS_NODE_NAME,
         );
         #[cfg(feature = "bevy_ui")]

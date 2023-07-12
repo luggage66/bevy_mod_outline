@@ -16,11 +16,11 @@ fn main() {
         .insert_resource(Msaa::Sample4)
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
-        .add_plugin(OutlinePlugin)
-        .add_startup_system(setup)
-        .add_system(close_on_esc)
-        .add_system(wobble)
-        .add_system(orbit)
+        .add_plugins(OutlinePlugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, close_on_esc)
+        .add_systems(Update, wobble)
+        .add_systems(Update, orbit)
         .run();
 }
 

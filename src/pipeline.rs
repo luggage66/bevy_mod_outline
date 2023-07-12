@@ -250,9 +250,9 @@ impl SpecializedMeshPipeline for OutlinePipeline {
                 vertex_defs.push(ShaderDefVal::from("SKINNED"));
                 buffer_attrs.push(Mesh::ATTRIBUTE_JOINT_INDEX.at_shader_location(2));
                 buffer_attrs.push(Mesh::ATTRIBUTE_JOINT_WEIGHT.at_shader_location(3));
-                self.mesh_pipeline.skinned_mesh_layout.clone()
+                self.mesh_pipeline.mesh_layouts.skinned.clone()
             } else {
-                self.mesh_pipeline.mesh_layout.clone()
+                self.mesh_pipeline.mesh_layouts.model_only.clone()
             },
         );
         bind_layouts.push(self.outline_view_bind_group_layout.clone());
